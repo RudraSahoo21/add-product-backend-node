@@ -7,10 +7,10 @@ const connectDB = () => {
     .then(() =>
       console.log("Add Product Details DataBase Connected Sucessfully...")
     )
-    .catch(() =>
+    .catch((error) =>
       console.log(
         "Error in connecting with the Add Product Details database",
-        err
+        error
       )
     );
 };
