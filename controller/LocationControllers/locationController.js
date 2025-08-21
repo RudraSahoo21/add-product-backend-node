@@ -24,6 +24,98 @@ const addNewLocations = async (req, res) => {
   }
 };
 
+// fetch all the location details for listing in dashboard
+const fetchPlacesLocation = async (req, res) => {
+  try {
+    const totalCount = await placeLocation.countDocuments();
+    const locations = await placeLocation
+      .find({})
+      .select("_id placeName location.coordinates");
+
+    res.status(200).json({
+      message: "location fetched sucessfully",
+      totalLocation: totalCount,
+      locationData: locations,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Something went wrong while fetching locations",
+      error: error.message || "Unknown error",
+    });
+  }
+};
+
+// update the places location from dashboard
+const updatePlacesLocation = async (req, res) => {
+  try {
+    const { _id, placeName, location } = req.body;
+    if (!_id) {
+      return res.status(400).json({ message: "Location _id is missing" });
+    }
+    const updateFields = {};
+    if (placeName) {
+      updateFields.placeName = placeName;
+    }
+    if (location?.coordinates) {
+      updateFields.location = {
+        type: "Point",
+        coordinates: location.coordinates,
+      };
+    }
+    // console.log(updateFields);
+    // Use findByIdAndUpdate with replacement (no $set)
+    const updatedRecord = await placeLocation
+      .findByIdAndUpdate(
+        _id,
+        { $set: updateFields },
+        { new: true, runValidators: true }
+      )
+      .select("_id location placeName");
+    if (!updatedRecord) {
+      return res.status(404).json({ message: "Location record not found" });
+    }
+    res.status(200).json({
+      message: "Location updated successfully",
+      updateResult: updatedRecord,
+    });
+  } catch (error) {
+    console.error("server error:", error);
+    res.status(500).json({
+      message: "Error in server",
+      error: error.message || "Unknown error",
+    });
+  }
+};
+
+// Delete places Location record
+const deletePlacesLocation = async (req, res) => {
+  const { _id } = req.body;
+  try {
+    if (!_id) {
+      return res.status(400).json({ message: "Location _id is missing" });
+    }
+    const deletedRecord = await placeLocation.findByIdAndDelete(_id);
+    if (!deletedRecord) {
+      return res.status(404).json({ message: "Location not found" });
+    }
+
+    res.status(200).json({
+      message: "Location deleted successfully",
+      deletedData: {
+        _id: deletedRecord._id,
+        placeName: deletedRecord.placeName,
+      },
+    });
+  } catch (error) {
+    console.error("server error:", error);
+    res.status(500).json({
+      message: "Error in server",
+      error: error.message || "Unknown error",
+    });
+  }
+};
+
 // add new-user location
 const addUserLocation = async (req, res) => {
   // console.log(req.body);
@@ -87,4 +179,11 @@ const fetchNearByPlaces = async (req, res) => {
   }
 };
 
-module.exports = { addNewLocations, addUserLocation, fetchNearByPlaces };
+module.exports = {
+  addNewLocations,
+  fetchPlacesLocation,
+  updatePlacesLocation,
+  deletePlacesLocation,
+  addUserLocation,
+  fetchNearByPlaces,
+};
